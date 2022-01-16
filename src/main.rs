@@ -1,5 +1,5 @@
-use std::{io::{self, Read, Write}, num::IntErrorKind};
-
+use std::{io::{self, Read, Write}, path::PathBuf, fs::File};
+use clap::Parser;
 
 struct Interpreter<const MS: usize> {
     prog: Vec<char>,
@@ -96,12 +96,33 @@ impl<const MS: usize> Interpreter<MS> {
 }
 
 
-
+#[derive(Parser)]
+#[clap(about = "Simple brainfuck interpreter", author = "Rowan S-L <rowan@fawkes.io>")]
+struct Args {
+    #[clap(long, short, help = "program to run")]
+    prog: PathBuf
+}
 
 
 fn main() {
-    let mut interp: Interpreter<30_000> = Interpreter::new(
-    ",[.,]".to_string()
-    );
+    let a = Args::parse();
+    let mut program = String::new();
+    let f = File::open(a.prog);
+    match f {
+        Ok(mut file) => {
+            match file.read_to_string(&mut program) {
+                Ok(_) => {}
+                Err(_) => {
+                    eprintln!("Failed to read file!");
+                    return;
+                }
+            }
+        }
+        Err(_) => {
+            eprintln!("Failed to open file");
+            return;
+        }
+    }
+    let mut interp: Interpreter<30_000> = Interpreter::new(program);
     while !interp.cycle::<0>() {}
 }
